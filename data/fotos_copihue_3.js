@@ -1,0 +1,1 @@
+var json_fotos_copihue_3 = {"type":"FeatureCollection","name":"fotos_copihue_3","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"id":null,"Foto":"../../SIG/Parcela/Fotos sonia/Fotos_compr/2.jpg"},"geometry":{"type":"Point","coordinates":[-71.776255860482308,-36.122044166032744]}}]}

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <title>Hacienda El Copihue - Gestión Inmobiliaria</title>
+
+    <!-- External Styles -->
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="css/qgis2web.css">
+    <link rel="stylesheet" href="css/fontawesome-all.min.css">
+    <link rel="stylesheet" href="css/leaflet.photon.css">
+
+    <!-- Custom Dashboard Styles -->
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <img src="download (1).png" alt="Logo Hacienda El Copihue">
+            <div class="project-info">
+                <h1>HACIENDA<br>EL COPIHUE</h1>
+            </div>
+        </div>
+
+        <nav class="nav-links">
+            <a href="#" class="nav-item active" id="btn-inventory">
+                <i class="fas fa-th-large"></i>
+                <span>Inventario de Lotes</span>
+            </a>
+            <a href="#" class="nav-item show-admin" id="btn-sales">
+                <i class="fas fa-chart-line"></i>
+                <span>Reporte de Ventas</span>
+            </a>
+            <a href="#" class="nav-item" id="btn-gallery">
+                <i class="fas fa-camera"></i>
+                <span>Galería del Proyecto</span>
+            </a>
+            <a href="#" class="nav-item show-admin" id="btn-financial">
+                <i class="fas fa-wallet"></i>
+                <span>Informes Financieros</span>
+            </a>
+            <a href="#" class="nav-item show-admin" id="btn-protocol">
+                <i class="fas fa-book"></i>
+                <span>Protocolo de Datos</span>
+            </a>
+            <a href="#" class="nav-item show-admin">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="nav-item">
+                <i class="fas fa-user-shield"></i>
+                <div class="role-selector-container">
+                    <span id="current-role-label">Perfil: Cargando...</span>
+                    <select id="role-switcher" class="role-dropdown">
+                        <option value="admin">Gerente General</option>
+                        <option value="vendor">Fuerza de Ventas</option>
+                        <option value="client">Visitante / Cliente</option>
+                    </select>
+                </div>
+            </div>
+            <a href="index.html" class="nav-item portal-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Volver al Portal</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Stats Header -->
+        <header class="stats-header">
+            <div class="stat-item show-admin-vendor">
+                <span class="stat-value" id="stat-total">-</span>
+                <span class="stat-label">Total Lotes</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" style="color: var(--accent-color)" id="stat-available">-</span>
+                <span class="stat-label">Disponibles</span>
+            </div>
+            <div class="stat-item show-admin-vendor">
+                <span class="stat-value" style="color: var(--accent-sold)" id="stat-sold">-</span>
+                <span class="stat-label">Vendidos</span>
+            </div>
+            <div class="stat-item show-admin">
+                <span class="stat-value" id="stat-value">$-</span>
+                <span class="stat-label">Valor Remanente</span>
+            </div>
+        </header>
+
+        <!-- Map and Overlay -->
+        <div id="map-wrapper" class="view-section">
+            <div id="map"></div>
+
+            <!-- Inventory Panel Overlay -->
+            <div class="inventory-panel" id="main-panel">
+                <div class="panel-header">
+                    <button id="collapse-panel-btn" class="toggle-btn" title="Contraer/Expandir Panel">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <h2 id="panel-title">Lista de Lotes</h2>
+                </div>
+                <div class="plot-list" id="plot-list-container">
+                    <!-- Cards will be injected by JS -->
+                    <div style="padding: 20px; text-align: center; color: #999;">Cargando datos...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports View -->
+        <div id="reports-wrapper" class="view-section" style="display: none; padding: 30px; overflow-y: auto;">
+            <h2 style="margin-bottom: 25px; color: var(--primary-color);"><i class="fas fa-chart-line"></i> Análisis de
+                Ventas y Proyectos</h2>
+            <div class="reports-grid">
+                <div class="chart-card">
+                    <h3>Estado del Inventariado</h3>
+                    <div class="canvas-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Proyección Financiera</h3>
+                    <div class="canvas-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card" style="grid-column: 1 / -1;">
+                    <h3>Historial de Ventas Mensuales</h3>
+                    <div class="canvas-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Financial Reports View -->
+        <div id="financial-wrapper" class="view-section" style="display: none; padding: 30px; overflow-y: auto;">
+            <div class="reports-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="color: var(--primary-color);"><i class="fas fa-wallet"></i> Panel de Control Financiero</h2>
+                <div class="report-controls" style="display: flex; gap: 10px;">
+                    <select id="fin-year" class="role-dropdown"
+                        style="width: auto; background: white; color: var(--primary-color); border: 1px solid #ddd;">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                    <select id="fin-month" class="role-dropdown"
+                        style="width: auto; background: white; color: var(--primary-color); border: 1px solid #ddd;">
+                        <option value="all">Todo el Año</option>
+                        <option value="0">Enero</option>
+                        <option value="1">Febrero</option>
+                        <option value="2">Marzo</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Mayo</option>
+                        <option value="5">Junio</option>
+                        <option value="6">Julio</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Septiembre</option>
+                        <option value="9">Octubre</option>
+                        <option value="10">Noviembre</option>
+                        <option value="11">Diciembre</option>
+                    </select>
+                    <button class="btn-print" id="btn-export-pdf"
+                        style="background: #e74c3c; color: white; border: none; padding: 5px 15px; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn-print" id="btn-export-excel"
+                        style="background: #27ae60; color: white; border: none; padding: 5px 15px; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-header"
+                style="margin-bottom: 30px; background: transparent; padding: 0; backdrop-filter: none; border-bottom: none;">
+                <div class="stat-item"
+                    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex: 1; margin: 0 10px;">
+                    <span class="stat-label">Ingresos Totales</span>
+                    <span class="stat-value" id="fin-total-income" style="color: var(--accent-color);">$ 0</span>
+                </div>
+                <div class="stat-item"
+                    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex: 1; margin: 0 10px;">
+                    <span class="stat-label">Lotes Vendidos</span>
+                    <span class="stat-value" id="fin-total-sold">0</span>
+                </div>
+                <div class="stat-item"
+                    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex: 1; margin: 0 10px;">
+                    <span class="stat-label">Comisiones Pagadas</span>
+                    <span class="stat-value" id="fin-total-commissions" style="color: #e67e22;">$ 0</span>
+                </div>
+                <div class="stat-item"
+                    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex: 1; margin: 0 10px;">
+                    <span class="stat-label">Margen Neto</span>
+                    <span class="stat-value" id="fin-net-margin" style="color: #27ae60;">$ 0</span>
+                </div>
+            </div>
+
+            <div class="reports-grid">
+                <div class="chart-card">
+                    <h3>Flujo de Caja Mensual</h3>
+                    <div class="canvas-container">
+                        <canvas id="finLineChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Detalle de Ventas Corrientes</h3>
+                    <div style="overflow-x: auto; margin-top: 15px;">
+                        <table class="report-table" id="fin-table">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 6px; text-align: left; font-size: 0.85em;">Fecha</th>
+                                    <th style="padding: 6px; text-align: left; font-size: 0.85em;">Lote</th>
+                                    <th style="padding: 6px; text-align: left; font-size: 0.85em;">Vendedor</th>
+                                    <th style="padding: 6px; text-align: left; font-size: 0.85em;">Pago</th>
+                                    <th style="padding: 6px; text-align: right; font-size: 0.85em;">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fin-table-body">
+                                <!-- JS will inject rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Protocol View -->
+        <div id="protocol-wrapper" class="view-section"
+            style="display: none; padding: 40px; overflow-y: auto; background: white; max-width: 900px; margin: 30px auto; border-radius: 20px; box-shadow: var(--shadow);">
+            <div class="protocol-content" style="line-height: 1.6; color: var(--primary-color);">
+                <h1 style="border-bottom: 3px solid var(--accent-color); padding-bottom: 10px; margin-bottom: 30px;">
+                    Protocolo de Gestión y Actualización de Datos</h1>
+                <p style="font-weight: 600; color: #666; margin-bottom: 30px;">Hacienda El Copihue - Sistema de Gestión
+                    Inmobiliaria</p>
+
+                <h3 style="color: var(--accent-color); margin-top: 30px;"><i class="fas fa-database"></i> 1. Estructura
+                    de Alimentación</h3>
+                <p>El sistema se alimenta de tres archivos clave en la carpeta <code>/data</code>:</p>
+                <ul>
+                    <li><code>Disponibles_2.js</code>: Lotes en venta con atributos técnicos.</li>
+                    <li><code>Vendidas_1.js</code>: Lotes vendidos con datos financieros.</li>
+                    <li><code>fotos_copihue_3.js</code>: Puntos georreferenciados de fotos.</li>
+                </ul>
+
+                <h3 style="color: var(--accent-color); margin-top: 30px;"><i class="fas fa-exchange-alt"></i> 2.
+                    Actualización de Ventas</h3>
+                <p>Cuando un lote se vende:</p>
+                <ol>
+                    <li>Capturar N° de Lote, Precio Real, Fecha y Vendedor.</li>
+                    <li>Mover el objeto del lote desde <code>Disponibles_2.js</code> a <code>Vendidas_1.js</code>.</li>
+                    <li>Actualizar los campos <code>Precio</code>, <code>FechaVenta</code> y <code>Vendedor</code> en el
+                        código.</li>
+                </ol>
+
+                <div
+                    style="background: #f8f9fa; border-left: 4px solid var(--accent-color); padding: 20px; margin: 25px 0; border-radius: 8px;">
+                    <strong>Nota Crítica:</strong> El formato de fecha debe ser siempre <code>AAAA-MM-DD</code> (ej:
+                    2025-01-27) para que los gráficos funcionen.
+                </div>
+
+                <h3 style="color: var(--accent-color); margin-top: 30px;"><i class="fas fa-camera"></i> 3. Gestión de
+                    Fotografías</h3>
+                <ul>
+                    <li>Redimensionar fotos a máx 1200px.</li>
+                    <li>Subir a carpeta <code>/images</code>.</li>
+                    <li>Vincular en <code>fotos_copihue_3.js</code>.</li>
+                </ul>
+
+                <h3 style="color: var(--accent-color); margin-top: 30px;"><i class="fas fa-shield-alt"></i> 4. Seguridad
+                </h3>
+                <p>Realizar siempre una copia de seguridad de la carpeta <code>/data</code> antes de cualquier edición
+                    manual.</p>
+
+                <footer
+                    style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9rem; color: #999; text-align: center;">
+                    Documento Versión 1.0 - Acceso Administrativo Hacienda El Copihue
+                </footer>
+            </div>
+        </div>
+
+        <!-- Gallery View -->
+        <div id="gallery-wrapper" class="view-section" style="display: none; padding: 30px; overflow-y: auto;">
+            <h2 style="margin-bottom: 25px; color: var(--primary-color);">Galería de Terreno</h2>
+            <div class="gallery-grid" id="project-gallery-grid">
+                <!-- Gallery items will be injected by JS -->
+                <div style="padding: 20px; text-align: center; color: #999;">Cargando galería...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Maps and Charts Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/qgis2web_expressions.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/L.Control.Layers.Tree.min.js"></script>
+    <script src="js/leaflet.rotatedMarker.js"></script>
+    <script src="js/leaflet.pattern.js"></script>
+    <script src="js/leaflet-hash.js"></script>
+    <script src="js/Autolinker.min.js"></script>
+    <script src="js/rbush.min.js"></script>
+    <script src="js/labelgun.min.js"></script>
+    <script src="js/labels.js"></script>
+    <script src="js/leaflet.photon.js"></script>
+
+    <!-- Project Data -->
+    <script src="data/Vendidas_1.js"></script>
+    <script src="data/Disponibles_2.js"></script>
+    <script src="data/fotos_copihue_3.js"></script>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content report-paper">
+            <button class="close-modal">&times;</button>
+            <div id="report-print-area">
+                <header class="report-header">
+                    <img src="download (1).png" alt="Logo" class="report-logo">
+                    <div class="report-title-block">
+                        <h1>FICHA TÉCNICA COMERCIAL</h1>
+                        <p>PROYECTO HACIENDA EL COPIHUE</p>
+                    </div>
+                </header>
+
+                <div class="report-grid-container">
+                    <div class="report-left">
+                        <section class="info-sec">
+                            <h3>Información General</h3>
+                            <table class="report-table">
+                                <tr>
+                                    <td>Identificación:</td>
+                                    <td id="rep-lote">Lote -</td>
+                                </tr>
+                                <tr>
+                                    <td>Superficie:</td>
+                                    <td id="rep-area">- m2</td>
+                                </tr>
+                                <tr>
+                                    <td>Precio:</td>
+                                    <td id="rep-precio">$ -</td>
+                                </tr>
+                                <tr>
+                                    <td>Estado:</td>
+                                    <td id="rep-estado">-</td>
+                                </tr>
+                            </table>
+                        </section>
+
+                        <section class="info-sec">
+                            <h3>Entorno Turístico</h3>
+                            <ul class="attractions-list">
+                                <li>📍 Río Maule: <span class="dist">15 min</span></li>
+                                <li>📍 Termas de Quinamávida: <span class="dist">25 min</span></li>
+                                <li>📍 Reserva Los Bellotos: <span class="dist">40 min</span></li>
+                                <li>📍 Centro San Clemente: <span class="dist">10 min</span></li>
+                            </ul>
+                        </section>
+                    </div>
+
+                    <div class="report-right">
+                        <div class="schematic-map-container">
+                            <h3>Mapa Esquemático de Ubicación</h3>
+                            <div id="report-map-snapshot">
+                                <img src="mapa_esquematico_copihue_1769529475152.png" alt="Mapa de Ubicación">
+                                <div class="plot-indicator"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-photo-gallery">
+                    <h3>Galería Fotográfica</h3>
+                    <div id="rep-photo-container"></div>
+                </div>
+
+                <footer class="report-footer-line">
+                    <p>Hacienda El Copihue - Gestión Inmobiliaria Inteligente</p>
+                </footer>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="window.print()" class="btn-print"><i class="fas fa-print"></i> Imprimir
+                    Reporte</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Logic -->
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+Id,Area,Estado,valor_total,fecha_venta,vendedor,comision_vendedor,forma_pago,monto_pagado,fecha_vencimiento
+1,5.000 m2,Vendida,45000000,2025-01-15,Juan Perez,1350000,Contado,45000000,2025-01-15
+2,5.200 m2,Vendida,48000000,2025-01-20,Maria Silva,1440000,Credito,10000000,2025-02-20
+3,5.000 m2,Reservada,45000000,2025-01-25,Roberto Gomez,1350000,Financiamiento,5000000,2025-02-25
+4,5.400 m2,Vendida,52000000,2025-01-10,Juan Perez,1560000,Contado,52000000,2025-01-10
+5,5.000 m2,Disponible,45000000,,,0,,0,
+6,5.100 m2,Vendida,46000000,2024-12-05,Maria Silva,1380000,Credito,23000000,2025-01-05
+7,5.000 m2,Vendida,45000000,2024-11-15,Juan Perez,1350000,Contado,45000000,2024-11-15
+8,5.000 m2,Vendida,45000000,2024-10-20,Roberto Gomez,1350000,Contado,45000000,2024-10-20
+9,5.200 m2,Vendida,48000000,2024-09-10,Maria Silva,1440000,Financiamiento,12000000,2024-10-10
+10,5.000 m2,Disponible,45000000,,,0,,0,
